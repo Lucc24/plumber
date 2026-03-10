@@ -1,0 +1,71 @@
+import random
+import pygame
+import sys
+
+pygame.init()
+screen = pygame.display.set_mode((800, 600))
+clock = pygame.time.Clock()
+
+floor = pygame.Rect(0, 550, 800, 50)
+left_wall = pygame.Rect(-50, 0, 50, 600)
+right_wall = pygame.Rect(800, 0, 50, 600)
+ceiling = pygame.Rect(0, -50, 800, 50)
+floor_color = (0, 0, 0)
+
+player_rect = pygame.Rect(400, 300, 50, 50)
+player_speed = 5
+
+platform_rects = [
+    pygame.Rect(150, 430, 120, 20),
+    pygame.Rect(150, 300, 120, 20),
+    pygame.Rect(150, 170, 120, 20),
+    pygame.Rect(530, 430, 120, 20),
+    pygame.Rect(530, 300, 120, 20),
+    pygame.Rect(530, 170, 120, 20),
+]
+
+gravity = 0.5
+velocity_y = 0
+on_ground = False
+
+while True:
+	for event in pygame.event.get():
+		if event.type == pygame.QUIT:
+			pygame.quit()
+			sys.exit()
+
+	keys = pygame.key.get_pressed()
+	if keys[pygame.K_LEFT]:
+		player_rect.x -= player_speed
+	if keys[pygame.K_RIGHT]:
+		player_rect.x += player_speed
+	if keys[pygame.K_UP] and on_ground:
+		velocity_y = -12
+		on_ground = False
+	if keys[pygame.K_DOWN]:
+		player_rect.y += player_speed
+	prev_bottom = player_rect.bottom
+	velocity_y += gravity
+	player_rect.y += velocity_y
+	if player_rect.colliderect(floor):
+		player_rect.y = floor.y - player_rect.height
+		velocity_y = 0
+		on_ground = True
+	if player_rect.colliderect(left_wall):
+		player_rect.x = left_wall.x + left_wall.width
+	if player_rect.colliderect(right_wall):
+		player_rect.x = right_wall.x - player_rect.width
+	if player_rect.colliderect(ceiling):
+		player_rect.y = ceiling.y + ceiling.height
+	screen.fill((255, 255, 255))
+	pygame.draw.rect(screen, (255, 0, 0), player_rect)
+	pygame.draw.rect(screen, floor_color, floor)
+	for platform in platform_rects:
+		pygame.draw.rect(screen, (0, 0, 0), platform)
+		if player_rect.colliderect(platform) and velocity_y > 0 and prev_bottom <= platform.top + 10:
+			player_rect.y = platform.y - player_rect.height
+			velocity_y = 0
+			on_ground = True
+
+	pygame.display.flip()
+	clock.tick(60)
