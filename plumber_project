@@ -1,16 +1,62 @@
 import random
 import pygame
 import sys
+import time
+import math
 
 pygame.init()
 screen = pygame.display.set_mode((800, 600))
 clock = pygame.time.Clock()
 
-floor = pygame.Rect(0, 550, 800, 50)
+
+floor = pygame.Rect(0, 560, 800, 40)
 left_wall = pygame.Rect(-50, 0, 50, 600)
 right_wall = pygame.Rect(800, 0, 50, 600)
 ceiling = pygame.Rect(0, -50, 800, 50)
 floor_color = (0, 0, 0)
+
+
+sword = pygame.Rect(700, 500, 30, 30)
+healthbar = pygame.Rect(10, 10, 200, 20)
+enemy_healthbar = pygame.Rect(590, 10, 200, 20)
+
+health = 100
+enemy_health = 100
+attacks = [
+	pygame.Rect(-3000, 450, 3000, 110),
+	pygame.Rect(-3000, 320, 3000, 110),
+	pygame.Rect(-3000, 190, 3000, 110),
+]
+
+telegraphs = [
+	pygame.Rect(-800, 450, 800, 110),
+	pygame.Rect(-800, 320, 800, 110),
+	pygame.Rect(-800, 190, 800, 110),
+]
+
+
+telegraph_surface = pygame.Surface((800, 110), pygame.SRCALPHA) #thanks to stackoverflow for this line
+
+start_time = pygame.time.get_ticks()
+attack_started = False
+attack_started2 = False
+attack_started3 = False
+attack_done = False
+attack_done2 = False
+attack_done3 = False
+attack_speed = 4000.0  
+attack_x = float(attacks[0].x)
+attack_x2 = float(attacks[1].x)
+attack_x3 = float(attacks[2].x)
+telegraph_start = False
+telegraph_start2 = False
+telegraph_start3 = False
+telegraph_done = False
+telegraph_done2 = False
+telegraph_done3 = False
+telegraph_show_time = 0
+telegraph_show_time2 = 0
+telegraph_show_time3 = 0
 
 player_rect = pygame.Rect(400, 300, 50, 50)
 player_speed = 5
@@ -44,6 +90,61 @@ while True:
 		on_ground = False
 	if keys[pygame.K_DOWN]:
 		player_rect.y += player_speed
+	if not attack_started and not attack_done and pygame.time.get_ticks() - start_time >= 4000:
+		attack_started = True
+	if not attack_started2 and not attack_done2 and pygame.time.get_ticks() - start_time >= 7000:
+		attack_started2 = True
+	if not attack_started3 and not attack_done3 and pygame.time.get_ticks() - start_time >= 9000:
+		attack_started3 = True
+	if not telegraph_start and not telegraph_done and pygame.time.get_ticks() - start_time >= 2000:
+		telegraph_start = True
+		telegraphs[0].x = 0
+		telegraph_show_time = pygame.time.get_ticks()
+	if not telegraph_start2 and not telegraph_done2 and pygame.time.get_ticks() - start_time >= 5000:
+		telegraph_start2 = True
+		telegraphs[1].x = 0
+		telegraph_show_time2 = pygame.time.get_ticks()
+	if not telegraph_start3 and not telegraph_done3 and pygame.time.get_ticks() - start_time >= 8000:
+		telegraph_start3 = True
+		telegraphs[2].x = 0
+		telegraph_show_time3 = pygame.time.get_ticks()
+	dt = clock.tick(60) / 1000.0
+
+	if attack_started and not telegraph_done:
+		telegraph_done = True
+		telegraphs[0].x = -800
+
+	if attack_started2 and not telegraph_done2:
+		telegraph_done2 = True
+		telegraphs[1].x = -800
+	if attack_started3 and not telegraph_done3:
+		telegraph_done3 = True
+		telegraphs[2].x = -800
+	if attack_started and not attack_done:
+		attack_x += attack_speed * dt
+		attacks[0].x = int(attack_x)
+	if attacks[0].x > 800:
+		attack_started = False
+		attack_done = True
+		attacks[0].x = -3000
+
+	if attack_started2 and not attack_done2:
+		attack_x2 += attack_speed * dt
+		attacks[1].x = int(attack_x2)
+	if attacks[1].x > 800:
+		attack_started2 = False
+		attack_done2 = True
+		attacks[1].x = -3000
+	if attack_started3 and not attack_done3:
+		attack_x3 += attack_speed * dt
+		attacks[2].x = int(attack_x3)
+	if attacks[2].x > 800:
+		attack_started3 = False
+		attack_done3 = True
+		attacks[2].x = -3000
+	
+
+
 	prev_bottom = player_rect.bottom
 	velocity_y += gravity
 	player_rect.y += velocity_y
@@ -57,9 +158,32 @@ while True:
 		player_rect.x = right_wall.x - player_rect.width
 	if player_rect.colliderect(ceiling):
 		player_rect.y = ceiling.y + ceiling.height
+	if player_rect.colliderect(sword):
+		enemy_health -= 10
+		sword.x = random.randint(50, 750)
+		sword.y = random.randint(50, 500)
+	healthbar.width = health * 2
+	enemy_healthbar.width = enemy_health * 2
+	
+
 	screen.fill((255, 255, 255))
 	pygame.draw.rect(screen, (255, 0, 0), player_rect)
 	pygame.draw.rect(screen, floor_color, floor)
+	pygame.draw.rect(screen, (0, 0, 255), sword)
+	pygame.draw.rect(screen, (0, 255, 0), healthbar)
+	pygame.draw.rect(screen, (255, 0, 0), enemy_healthbar)
+	for telegraph in telegraphs:
+		if telegraph.x >= 0:
+			show_time = telegraph_show_time if telegraph == telegraphs[0] else telegraph_show_time2
+			elapsed = (pygame.time.get_ticks() - show_time) / 1000.0 
+			alpha = int(64 + 64 * math.sin(elapsed * 12)) #yet again stackoverflow is the goat
+			alpha = max(0, min(128, alpha))
+			telegraph_surface.fill((255, 0, 255, alpha))
+			screen.blit(telegraph_surface, (telegraph.x, telegraph.y))
+	for attack in attacks:
+		pygame.draw.rect(screen, (255, 0, 255), attack)
+		if player_rect.colliderect(attack):
+			health -= 1
 	for platform in platform_rects:
 		pygame.draw.rect(screen, (0, 0, 0), platform)
 		if player_rect.colliderect(platform) and velocity_y > 0 and prev_bottom <= platform.top + 10:
@@ -68,4 +192,3 @@ while True:
 			on_ground = True
 
 	pygame.display.flip()
-	clock.tick(60)
