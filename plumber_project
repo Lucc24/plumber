@@ -4,6 +4,7 @@ import sys
 import math
 
 pygame.init()
+my_font = pygame.font.SysFont('Comic Sans MS', 30)
 screen = pygame.display.set_mode((800, 600))
 clock = pygame.time.Clock()
 
@@ -21,41 +22,40 @@ enemy_healthbar = pygame.Rect(590, 10, 200, 20)
 
 health = 100
 enemy_health = 100
-attacks = [
-	pygame.Rect(-3000, 450, 3000, 110),
-	pygame.Rect(-3000, 320, 3000, 110),
-	pygame.Rect(-3000, 190, 3000, 110),
-]
+attack_positions = [450, 320, 190]
 
+
+
+pos1 = random.choice(attack_positions)
+pos2 = random.choice(attack_positions)
+pos3 = random.choice(attack_positions)
+pos4 = random.choice(attack_positions)
+attacks = [
+	pygame.Rect(-3000, pos1, 3000, 110),
+	pygame.Rect(-3000, pos2, 3000, 110),
+	pygame.Rect(-3000, pos3, 3000, 110),
+	pygame.Rect(-3000, pos4, 3000, 110),
+]
 telegraphs = [
-	pygame.Rect(-800, 450, 800, 110),
-	pygame.Rect(-800, 320, 800, 110),
-	pygame.Rect(-800, 190, 800, 110),
+	pygame.Rect(-800, pos1, 800, 110),
+	pygame.Rect(-800, pos2, 800, 110),
+	pygame.Rect(-800, pos3, 800, 110),
+	pygame.Rect(-800, pos4, 800, 110),
 ]
 
 
 telegraph_surface = pygame.Surface((800, 110), pygame.SRCALPHA) #thanks to stackoverflow for this line
 
 start_time = pygame.time.get_ticks()
-attack_started = False
-attack_started2 = False
-attack_started3 = False
-attack_done = False
-attack_done2 = False
-attack_done3 = False
-attack_speed = 4000.0  
-attack_x = float(attacks[0].x)
-attack_x2 = float(attacks[1].x)
-attack_x3 = float(attacks[2].x)
-telegraph_start = False
-telegraph_start2 = False
-telegraph_start3 = False
-telegraph_done = False
-telegraph_done2 = False
-telegraph_done3 = False
-telegraph_show_time = 0
-telegraph_show_time2 = 0
-telegraph_show_time3 = 0
+attack_speed = 4000.0
+attack_started = [False, False, False, False]
+attack_done = [False, False, False, False]
+attack_x = [float(attacks[0].x), float(attacks[1].x), float(attacks[2].x), float(attacks[3].x)]
+telegraph_started = [False, False, False, False]
+telegraph_done = [False, False, False, False]
+telegraph_show_times = [0, 0, 0, 0]
+attack_timings = [2000, 5000, 7000, 10000]
+telegraph_timings = [0, 3000, 6000, 8000]
 
 player_rect = pygame.Rect(400, 300, 50, 50)
 player_speed = 5
@@ -74,6 +74,8 @@ velocity_y = 0
 on_ground = False
 
 while True:
+
+
 	for event in pygame.event.get():
 		if event.type == pygame.QUIT:
 			pygame.quit()
@@ -89,58 +91,49 @@ while True:
 		on_ground = False
 	if keys[pygame.K_DOWN]:
 		player_rect.y += player_speed
-	if not attack_started and not attack_done and pygame.time.get_ticks() - start_time >= 4000:
-		attack_started = True
-	if not attack_started2 and not attack_done2 and pygame.time.get_ticks() - start_time >= 7000:
-		attack_started2 = True
-	if not attack_started3 and not attack_done3 and pygame.time.get_ticks() - start_time >= 9000:
-		attack_started3 = True
-	if not telegraph_start and not telegraph_done and pygame.time.get_ticks() - start_time >= 2000:
-		telegraph_start = True
-		telegraphs[0].x = 0
-		telegraph_show_time = pygame.time.get_ticks()
-	if not telegraph_start2 and not telegraph_done2 and pygame.time.get_ticks() - start_time >= 5000:
-		telegraph_start2 = True
-		telegraphs[1].x = 0
-		telegraph_show_time2 = pygame.time.get_ticks()
-	if not telegraph_start3 and not telegraph_done3 and pygame.time.get_ticks() - start_time >= 8000:
-		telegraph_start3 = True
-		telegraphs[2].x = 0
-		telegraph_show_time3 = pygame.time.get_ticks()
+	for i in range(4):
+		if not attack_started[i] and not attack_done[i] and pygame.time.get_ticks() - start_time >= attack_timings[i]:
+			attack_started[i] = True
+		if not telegraph_started[i] and not telegraph_done[i] and pygame.time.get_ticks() - start_time >= telegraph_timings[i]:
+			telegraph_started[i] = True
+			telegraphs[i].x = 0
+			telegraph_show_times[i] = pygame.time.get_ticks()
 	dt = clock.tick(60) / 1000.0
 
-	if attack_started and not telegraph_done:
-		telegraph_done = True
-		telegraphs[0].x = -800
+	for i in range(4):
+		if attack_started[i] and not telegraph_done[i]:
+			telegraph_done[i] = True
+			telegraphs[i].x = -800
+		if attack_started[i] and not attack_done[i]:
+			attack_x[i] += attack_speed * dt
+			attacks[i].x = int(attack_x[i])
+		if attacks[i].x > 800:
+			attack_started[i] = False
+			attack_done[i] = True
+			attacks[i].x = -3000
 
-	if attack_started2 and not telegraph_done2:
-		telegraph_done2 = True
-		telegraphs[1].x = -800
-	if attack_started3 and not telegraph_done3:
-		telegraph_done3 = True
-		telegraphs[2].x = -800
-	if attack_started and not attack_done:
-		attack_x += attack_speed * dt
-		attacks[0].x = int(attack_x)
-	if attacks[0].x > 800:
-		attack_started = False
-		attack_done = True
-		attacks[0].x = -3000
-
-	if attack_started2 and not attack_done2:
-		attack_x2 += attack_speed * dt
-		attacks[1].x = int(attack_x2)
-	if attacks[1].x > 800:
-		attack_started2 = False
-		attack_done2 = True
-		attacks[1].x = -3000
-	if attack_started3 and not attack_done3:
-		attack_x3 += attack_speed * dt
-		attacks[2].x = int(attack_x3)
-	if attacks[2].x > 800:
-		attack_started3 = False
-		attack_done3 = True
-		attacks[2].x = -3000
+	if attack_done[0] and attack_done[1] and attack_done[2] and attack_done[3]:
+		pos1 = random.choice(attack_positions)
+		pos2 = random.choice(attack_positions)
+		pos3 = random.choice(attack_positions)
+		pos4 = random.choice(attack_positions)
+		attacks[0].y = pos1
+		attacks[1].y = pos2
+		attacks[2].y = pos3
+		attacks[3].y = pos4
+		telegraphs[0].y = pos1
+		telegraphs[1].y = pos2
+		telegraphs[2].y = pos3
+		telegraphs[3].y = pos4
+		for i in range(4):
+			attack_done[i] = False
+			attack_x[i] = -3000.0
+			attacks[i].x = -3000
+			telegraph_started[i] = False
+			telegraph_done[i] = False
+			telegraphs[i].x = -800
+			telegraph_show_times[i] = 0
+		start_time = pygame.time.get_ticks()
 	
 
 
@@ -158,23 +151,32 @@ while True:
 	if player_rect.colliderect(ceiling):
 		player_rect.y = ceiling.y + ceiling.height
 	if player_rect.colliderect(sword):
-		enemy_health -= 10
+		enemy_health -= 5
 		sword.x = random.randint(50, 750)
 		sword.y = random.randint(50, 500)
+	if sword.colliderect(platform_rects[0]) or sword.colliderect(platform_rects[1]) or sword.colliderect(platform_rects[2]) or sword.colliderect(platform_rects[3]) or sword.colliderect(platform_rects[4]) or sword.colliderect(platform_rects[5]):
+			sword.x = random.randint(50, 750)
+			sword.y = random.randint(50, 500)
 	healthbar.width = health * 2
 	enemy_healthbar.width = enemy_health * 2
-	
-
+	if enemy_health <= 0:
+		print("You win!")
+		pygame.quit()
+		sys.exit()
+	if health <= 0:
+		print("You lose!")
+		pygame.quit()
+		sys.exit()
 	screen.fill((255, 255, 255))
 	pygame.draw.rect(screen, (255, 0, 0), player_rect)
 	pygame.draw.rect(screen, floor_color, floor)
 	pygame.draw.rect(screen, (0, 0, 255), sword)
 	pygame.draw.rect(screen, (0, 255, 0), healthbar)
 	pygame.draw.rect(screen, (255, 0, 0), enemy_healthbar)
-	for telegraph in telegraphs:
+	for i in range(4):
+		telegraph = telegraphs[i]
 		if telegraph.x >= 0:
-			show_time = telegraph_show_time if telegraph == telegraphs[0] else telegraph_show_time2
-			elapsed = (pygame.time.get_ticks() - show_time) / 1000.0 
+			elapsed = (pygame.time.get_ticks() - telegraph_show_times[i]) / 1000.0 
 			alpha = int(64 + 64 * math.sin(elapsed * 12)) #yet again stackoverflow is the goat
 			alpha = max(0, min(128, alpha))
 			telegraph_surface.fill((255, 0, 255, alpha))
@@ -189,5 +191,10 @@ while True:
 			player_rect.y = platform.y - player_rect.height
 			velocity_y = 0
 			on_ground = True
+
+	text_surface = my_font.render(str(health), False, (0, 0, 0))
+	enemy_text_surface = my_font.render(str(enemy_health), False, (0, 0, 0))
+	screen.blit(text_surface, (215, -3))
+	screen.blit(enemy_text_surface, (535, -3))
 
 	pygame.display.flip()
