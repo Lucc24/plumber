@@ -13,7 +13,7 @@ floor = pygame.Rect(0, 560, 800, 40)
 
 
 coin = pygame.Rect(700, 450, 30, 30)
-healthbar = pygame.Rect(170, 10, 200, 20)
+healthbar = pygame.Rect(120, 10, 200, 20)
 
 health = 100
 coins = 0
@@ -241,9 +241,9 @@ while True:
 	text_surface = my_font.render( 'Health:' + str(health), False, (0, 0, 0))
 	timer_text = my_font.render('Timer: '+ str(int(remaining)), False, (0, 0, 0))
 	coins_text = my_font.render('Coins: ' + str(coins) + "/20", False, (0, 0, 0))
-	screen.blit(text_surface, (10, -3))
-	screen.blit(timer_text, (400, -3))
-	screen.blit(coins_text, (620, -3))
+	screen.blit(text_surface, (10, 10))
+	screen.blit(timer_text, (400, 10))
+	screen.blit(coins_text, (620, 10))
 
 	pygame.display.flip()
 
