@@ -10,10 +10,6 @@ clock = pygame.time.Clock()
 
 
 floor = pygame.Rect(0, 560, 800, 40)
-left_wall = pygame.Rect(-50, 0, 50, 600)
-right_wall = pygame.Rect(800, 0, 50, 600)
-ceiling = pygame.Rect(0, -50, 800, 50)
-floor_color = (0, 0, 0)
 
 
 coin = pygame.Rect(700, 500, 30, 30)
@@ -46,10 +42,9 @@ telegraphs = [
 telegraph_surface = pygame.Surface((800, 110), pygame.SRCALPHA) #thanks to stackoverflow for this line
 
 start_time = pygame.time.get_ticks()
-attack_speed = 4000.0
+attack_speed = 67
 attack_started = [False, False, False, False]
 attack_done = [False, False, False, False]
-attack_x = [-3000.0, -3000.0, -3000.0, -3000.0]
 telegraph_started = [False, False, False, False]
 telegraph_done = [False, False, False, False]
 telegraph_show_times = [0, 0, 0, 0]
@@ -77,6 +72,7 @@ small_font = pygame.font.SysFont('Comic Sans MS', 20)
 
 
 on_start_screen = True
+
 while on_start_screen:
 	for event in pygame.event.get():
 		if event.type == pygame.QUIT:
@@ -91,16 +87,40 @@ while on_start_screen:
 	line3 = small_font.render("You can jump one time in midair when falling off platforms", False, (100, 100, 100))
 	start_text = my_font.render("Press ENTER to start", False, (0, 0, 0))
 	screen.blit(title_text, (250, 150))
-	screen.blit(line1, (100, 280))
-	screen.blit(line2, (120, 320))
-	screen.blit(line3, (50, 360))
-	screen.blit(start_text, (210, 420))
+	screen.blit(line1, (170, 280))
+	screen.blit(line2, (170, 320))
+	screen.blit(line3, (170, 360))
+	screen.blit(start_text, (250, 420))
 	pygame.display.flip()
 	clock.tick(60)
 
 start_time = pygame.time.get_ticks()
 timer_start = pygame.time.get_ticks()
 
+on_death_screen = False
+
+def on_death():
+
+	while on_death_screen:
+		for event in pygame.event.get():
+			if event.type == pygame.QUIT:
+				pygame.quit()
+				sys.exit()
+		screen.fill((255, 255, 255))
+		title_text = title_font.render("You died :(", False, (0, 0, 0))
+		screen.blit(title_text, (250, 150))
+		pygame.display.flip()
+on_win_screen = False
+def on_win():
+	while on_win_screen:
+		for event in pygame.event.get():
+			if event.type == pygame.QUIT:
+				pygame.quit()
+				sys.exit()
+		screen.fill((255, 255, 255))
+		title_text = title_font.render("You win :)", False, (0, 0, 0))
+		screen.blit(title_text, (250, 150))
+		pygame.display.flip()
 
 while True:
 
@@ -126,15 +146,14 @@ while True:
 			telegraph_started[i] = True
 			telegraphs[i].x = 0
 			telegraph_show_times[i] = pygame.time.get_ticks()
-	dt = clock.tick(60) / 1000.0
+	clock.tick(60)
 
 	for i in range(4):
 		if attack_started[i] and not telegraph_done[i]:
 			telegraph_done[i] = True
 			telegraphs[i].x = -800
 		if attack_started[i] and not attack_done[i]:
-			attack_x[i] += attack_speed * dt
-			attacks[i].x = int(attack_x[i])
+			attacks[i].x += attack_speed
 		if attacks[i].x > 800:
 			attack_started[i] = False
 			attack_done[i] = True
@@ -155,7 +174,6 @@ while True:
 		telegraphs[3].y = pos4
 		for i in range(4):
 			attack_done[i] = False
-			attack_x[i] = -3000.0
 			attacks[i].x = -3000
 			telegraph_started[i] = False
 			telegraph_done[i] = False
@@ -175,12 +193,12 @@ while True:
 		player_rect.y = floor.y - player_rect.height
 		velocity_y = 0
 		on_ground = True
-	if player_rect.colliderect(left_wall):
-		player_rect.x = left_wall.x + left_wall.width
-	if player_rect.colliderect(right_wall):
-		player_rect.x = right_wall.x - player_rect.width
-	if player_rect.colliderect(ceiling):
-		player_rect.y = ceiling.y + ceiling.height
+	if player_rect.x < 0:
+		player_rect.x = 0
+	if player_rect.right > 800:
+		player_rect.right = 800
+	if player_rect.y < 0:
+		player_rect.y = 0
 	if player_rect.colliderect(coin):
 		coins += 1
 		coin.x = random.randint(50, 750)
@@ -189,25 +207,23 @@ while True:
 			coin.x = random.randint(50, 750)
 			coin.y = random.randint(50, 500)
 	healthbar.width = health * 2
-	remaining = 60 - (pygame.time.get_ticks() - timer_start) / 1000.0
+	remaining = 45 - (pygame.time.get_ticks() - timer_start) / 1000.0
 	if coins >= 20:
-		print("You win!")
-		pygame.quit()
-		sys.exit()
+		on_win_screen = True
+		on_win()
 	if health <= 0 or remaining <= 0:
-		print("You lose!")
-		pygame.quit()
-		sys.exit()
+		on_death_screen = True
+		on_death()
 	screen.fill((255, 255, 255))
 	pygame.draw.rect(screen, (255, 0, 0), player_rect)
-	pygame.draw.rect(screen, floor_color, floor)
-	pygame.draw.rect(screen, (0, 0, 255), coin)
+	pygame.draw.rect(screen, (0, 0, 0), floor)
+	pygame.draw.rect(screen, (255, 205, 0), coin)
 	pygame.draw.rect(screen, (0, 255, 0), healthbar)
 	for i in range(4):
 		telegraph = telegraphs[i]
 		if telegraph.x >= 0:
-			elapsed = (pygame.time.get_ticks() - telegraph_show_times[i]) / 1000.0 
-			alpha = int(64 + 64 * math.sin(elapsed * 12)) #yet again stackoverflow is the goat
+			time_passed = (pygame.time.get_ticks() - telegraph_show_times[i]) / 1000.0 
+			alpha = int(64 + 64 * math.sin(time_passed * 12)) #yet again stackoverflow is the goat
 			alpha = max(0, min(128, alpha))
 			telegraph_surface.fill((255, 0, 255, alpha))
 			screen.blit(telegraph_surface, (telegraph.x, telegraph.y))
@@ -226,8 +242,8 @@ while True:
 	timer_text = my_font.render(str(int(remaining)), False, (0, 0, 0))
 	coins_text = my_font.render(str(coins) + "/20", False, (0, 0, 0))
 	screen.blit(text_surface, (215, -3))
-	screen.blit(timer_text, (370, -3))
-	screen.blit(coins_text, (590, -3))
+	screen.blit(timer_text, (400, -3))
+	screen.blit(coins_text, (700, -3))
 
 	pygame.display.flip()
 
