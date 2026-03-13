@@ -2,7 +2,7 @@ import random
 import pygame
 import sys
 import math
-
+pygame.mixer.Sound
 pygame.init()
 my_font = pygame.font.SysFont('Comic Sans MS', 30)
 screen = pygame.display.set_mode((800, 600))
@@ -11,6 +11,17 @@ clock = pygame.time.Clock()
 
 floor = pygame.Rect(0, 560, 800, 40)
 
+attack_sound_effect = pygame.mixer.Sound('attack_sound_effect.mp3')
+attack_sound_effect.set_volume(0.5)
+chargeup_sound_effect = pygame.mixer.Sound('freesound_community-magic-chargeup-102051.mp3')
+chargeup_sound_effect.set_volume(0.5)
+main_menu = pygame.mixer.music.load('main_music.mp3')
+pygame.mixer.music.play(-1)
+main_menu =pygame.mixer_music.set_volume(0.8)
+win_sound_effect = pygame.mixer.Sound('win_sound.mp3')
+win_sound_effect.set_volume(0.7)
+loss_sound_effect = pygame.mixer.Sound('loss_sound.mp3')
+loss_sound_effect.set_volume(0.7)
 
 coin = pygame.Rect(700, 450, 30, 30)
 healthbar = pygame.Rect(120, 10, 200, 20)
@@ -68,7 +79,7 @@ velocity_y = 0
 on_ground = False
 
 title_font = pygame.font.SysFont('Comic Sans MS', 50)
-small_font = pygame.font.SysFont('Comic Sans MS', 20)
+small_font = pygame.font.SysFont('Comic Sans MS', 25)
 
 
 on_start_screen = True
@@ -83,7 +94,7 @@ while on_start_screen:
 	screen.fill((255, 255, 255))
 	title_text = title_font.render("Instructions", False, (0, 0, 0))
 	line1 = small_font.render("Goal: Collect 20 coins to win before the timer runs out", False, (100, 100, 100))
-	line2 = small_font.render("Attacks: The flashing warnings mean an attack is coming", False, (100, 100, 100))
+	line2 = small_font.render("Attacks: The flashing warning bars mean an attack is coming", False, (100, 100, 100))
 	line3 = small_font.render("Controls: You can jump one time in midair when falling off platforms", False, (100, 100, 100))
 	start_text = my_font.render("Press ENTER to start", False, (0, 0, 0))
 	screen.blit(title_text, (250, 150))
@@ -100,7 +111,7 @@ timer_start = pygame.time.get_ticks()
 on_death_screen = False
 
 def on_death():
-
+	loss_sound_effect.play()
 	while on_death_screen:
 		for event in pygame.event.get():
 			if event.type == pygame.QUIT:
@@ -112,6 +123,7 @@ def on_death():
 		pygame.display.flip()
 on_win_screen = False
 def on_win():
+	win_sound_effect.play()
 	while on_win_screen:
 		for event in pygame.event.get():
 			if event.type == pygame.QUIT:
@@ -123,7 +135,7 @@ def on_win():
 		pygame.display.flip()
 
 while True:
-
+	
 	for event in pygame.event.get():
 		if event.type == pygame.QUIT:
 			pygame.quit()
@@ -142,7 +154,9 @@ while True:
 	for i in range(4):
 		if not attack_started[i] and not attack_done[i] and pygame.time.get_ticks() - start_time >= attack_timings[i]:
 			attack_started[i] = True
+			attack_sound_effect.play()
 		if not telegraph_started[i] and not telegraph_done[i] and pygame.time.get_ticks() - start_time >= telegraph_timings[i]:
+			chargeup_sound_effect.play()
 			telegraph_started[i] = True
 			telegraphs[i].x = 0
 			telegraph_show_times[i] = pygame.time.get_ticks()
@@ -150,6 +164,7 @@ while True:
 
 	for i in range(4):
 		if attack_started[i] and not telegraph_done[i]:
+			chargeup_sound_effect.stop()
 			telegraph_done[i] = True
 			telegraphs[i].x = -800
 		if attack_started[i] and not attack_done[i]:
@@ -209,9 +224,15 @@ while True:
 	healthbar.width = health * 2
 	remaining = 45 - (pygame.time.get_ticks() - timer_start) / 1000.0
 	if coins >= 20:
+		pygame.mixer.music.stop()
+		chargeup_sound_effect.stop()
+		attack_sound_effect.stop()
 		on_win_screen = True
 		on_win()
 	if health <= 0 or remaining <= 0:
+		pygame.mixer.music.stop()
+		chargeup_sound_effect.stop()
+		attack_sound_effect.stop()
 		on_death_screen = True
 		on_death()
 	screen.fill((255, 255, 255))
