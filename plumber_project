@@ -16,12 +16,11 @@ ceiling = pygame.Rect(0, -50, 800, 50)
 floor_color = (0, 0, 0)
 
 
-sword = pygame.Rect(700, 500, 30, 30)
+coin = pygame.Rect(700, 500, 30, 30)
 healthbar = pygame.Rect(10, 10, 200, 20)
-enemy_healthbar = pygame.Rect(590, 10, 200, 20)
 
 health = 100
-enemy_health = 100
+coins = 0
 attack_positions = [450, 320, 190]
 
 
@@ -50,7 +49,7 @@ start_time = pygame.time.get_ticks()
 attack_speed = 4000.0
 attack_started = [False, False, False, False]
 attack_done = [False, False, False, False]
-attack_x = [float(attacks[0].x), float(attacks[1].x), float(attacks[2].x), float(attacks[3].x)]
+attack_x = [-3000.0, -3000.0, -3000.0, -3000.0]
 telegraph_started = [False, False, False, False]
 telegraph_done = [False, False, False, False]
 telegraph_show_times = [0, 0, 0, 0]
@@ -73,8 +72,37 @@ gravity = 0.5
 velocity_y = 0
 on_ground = False
 
-while True:
+title_font = pygame.font.SysFont('Comic Sans MS', 50)
+small_font = pygame.font.SysFont('Comic Sans MS', 20)
 
+
+on_start_screen = True
+while on_start_screen:
+	for event in pygame.event.get():
+		if event.type == pygame.QUIT:
+			pygame.quit()
+			sys.exit()
+		if event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN:
+			on_start_screen = False
+	screen.fill((255, 255, 255))
+	title_text = title_font.render("Instructions", False, (0, 0, 0))
+	line1 = small_font.render("Collect 20 coins to win before the timer runs out", False, (100, 100, 100))
+	line2 = small_font.render("The flashing warnings mean an attack is coming", False, (100, 100, 100))
+	line3 = small_font.render("You can jump one time in midair when falling off platforms", False, (100, 100, 100))
+	start_text = my_font.render("Press ENTER to start", False, (0, 0, 0))
+	screen.blit(title_text, (250, 150))
+	screen.blit(line1, (100, 280))
+	screen.blit(line2, (120, 320))
+	screen.blit(line3, (50, 360))
+	screen.blit(start_text, (210, 420))
+	pygame.display.flip()
+	clock.tick(60)
+
+start_time = pygame.time.get_ticks()
+timer_start = pygame.time.get_ticks()
+
+
+while True:
 
 	for event in pygame.event.get():
 		if event.type == pygame.QUIT:
@@ -135,6 +163,11 @@ while True:
 			telegraph_show_times[i] = 0
 		start_time = pygame.time.get_ticks()
 
+	if coins >= 10:
+		telegraph_timings = [0, 2000, 4000, 6000]
+		attack_timings = [1000, 3000, 5000, 7000]
+
+
 	prev_bottom = player_rect.bottom
 	velocity_y += gravity
 	player_rect.y += velocity_y
@@ -148,29 +181,28 @@ while True:
 		player_rect.x = right_wall.x - player_rect.width
 	if player_rect.colliderect(ceiling):
 		player_rect.y = ceiling.y + ceiling.height
-	if player_rect.colliderect(sword):
-		enemy_health -= 5
-		sword.x = random.randint(50, 750)
-		sword.y = random.randint(50, 500)
-	if sword.colliderect(platform_rects[0]) or sword.colliderect(platform_rects[1]) or sword.colliderect(platform_rects[2]) or sword.colliderect(platform_rects[3]) or sword.colliderect(platform_rects[4]) or sword.colliderect(platform_rects[5]):
-			sword.x = random.randint(50, 750)
-			sword.y = random.randint(50, 500)
+	if player_rect.colliderect(coin):
+		coins += 1
+		coin.x = random.randint(50, 750)
+		coin.y = random.randint(50, 500)
+	if coin.colliderect(platform_rects[0]) or coin.colliderect(platform_rects[1]) or coin.colliderect(platform_rects[2]) or coin.colliderect(platform_rects[3]) or coin.colliderect(platform_rects[4]) or coin.colliderect(platform_rects[5]):
+			coin.x = random.randint(50, 750)
+			coin.y = random.randint(50, 500)
 	healthbar.width = health * 2
-	enemy_healthbar.width = enemy_health * 2
-	if enemy_health <= 0:
+	remaining = 60 - (pygame.time.get_ticks() - timer_start) / 1000.0
+	if coins >= 20:
 		print("You win!")
 		pygame.quit()
 		sys.exit()
-	if health <= 0:
+	if health <= 0 or remaining <= 0:
 		print("You lose!")
 		pygame.quit()
 		sys.exit()
 	screen.fill((255, 255, 255))
 	pygame.draw.rect(screen, (255, 0, 0), player_rect)
 	pygame.draw.rect(screen, floor_color, floor)
-	pygame.draw.rect(screen, (0, 0, 255), sword)
+	pygame.draw.rect(screen, (0, 0, 255), coin)
 	pygame.draw.rect(screen, (0, 255, 0), healthbar)
-	pygame.draw.rect(screen, (255, 0, 0), enemy_healthbar)
 	for i in range(4):
 		telegraph = telegraphs[i]
 		if telegraph.x >= 0:
@@ -191,8 +223,11 @@ while True:
 			on_ground = True
 
 	text_surface = my_font.render(str(health), False, (0, 0, 0))
-	enemy_text_surface = my_font.render(str(enemy_health), False, (0, 0, 0))
+	timer_text = my_font.render(str(int(remaining)), False, (0, 0, 0))
+	coins_text = my_font.render(str(coins) + "/20", False, (0, 0, 0))
 	screen.blit(text_surface, (215, -3))
-	screen.blit(enemy_text_surface, (535, -3))
+	screen.blit(timer_text, (370, -3))
+	screen.blit(coins_text, (590, -3))
 
 	pygame.display.flip()
+
