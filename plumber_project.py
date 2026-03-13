@@ -12,8 +12,8 @@ clock = pygame.time.Clock()
 floor = pygame.Rect(0, 560, 800, 40)
 
 
-coin = pygame.Rect(700, 500, 30, 30)
-healthbar = pygame.Rect(10, 10, 200, 20)
+coin = pygame.Rect(700, 450, 30, 30)
+healthbar = pygame.Rect(170, 10, 200, 20)
 
 health = 100
 coins = 0
@@ -82,9 +82,9 @@ while on_start_screen:
 			on_start_screen = False
 	screen.fill((255, 255, 255))
 	title_text = title_font.render("Instructions", False, (0, 0, 0))
-	line1 = small_font.render("Collect 20 coins to win before the timer runs out", False, (100, 100, 100))
-	line2 = small_font.render("The flashing warnings mean an attack is coming", False, (100, 100, 100))
-	line3 = small_font.render("You can jump one time in midair when falling off platforms", False, (100, 100, 100))
+	line1 = small_font.render("Goal: Collect 20 coins to win before the timer runs out", False, (100, 100, 100))
+	line2 = small_font.render("Attacks: The flashing warnings mean an attack is coming", False, (100, 100, 100))
+	line3 = small_font.render("Controls: You can jump one time in midair when falling off platforms", False, (100, 100, 100))
 	start_text = my_font.render("Press ENTER to start", False, (0, 0, 0))
 	screen.blit(title_text, (250, 150))
 	screen.blit(line1, (170, 280))
@@ -238,12 +238,12 @@ while True:
 			velocity_y = 0
 			on_ground = True
 
-	text_surface = my_font.render(str(health), False, (0, 0, 0))
-	timer_text = my_font.render(str(int(remaining)), False, (0, 0, 0))
-	coins_text = my_font.render(str(coins) + "/20", False, (0, 0, 0))
-	screen.blit(text_surface, (215, -3))
+	text_surface = my_font.render( 'Health:' + str(health), False, (0, 0, 0))
+	timer_text = my_font.render('Timer: '+ str(int(remaining)), False, (0, 0, 0))
+	coins_text = my_font.render('Coins: ' + str(coins) + "/20", False, (0, 0, 0))
+	screen.blit(text_surface, (10, -3))
 	screen.blit(timer_text, (400, -3))
-	screen.blit(coins_text, (700, -3))
+	screen.blit(coins_text, (620, -3))
 
 	pygame.display.flip()
 
