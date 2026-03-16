@@ -1,4 +1,5 @@
 import random
+from numpy import double
 import pygame
 import sys
 import math
@@ -7,7 +8,6 @@ pygame.init()
 my_font = pygame.font.SysFont('Comic Sans MS', 30)
 screen = pygame.display.set_mode((800, 600))
 clock = pygame.time.Clock()
-
 
 floor = pygame.Rect(0, 560, 800, 40)
 
@@ -30,7 +30,8 @@ health = 100
 coins = 0
 attack_positions = [450, 320, 190]
 
-
+double_jump_x= random.randint(50, 750)
+double_jump_y = random.randint(50, 500)
 
 pos1 = random.choice(attack_positions)
 pos2 = random.choice(attack_positions)
@@ -49,7 +50,6 @@ telegraphs = [
 	pygame.Rect(-800, pos4, 800, 110),
 ]
 
-
 telegraph_surface = pygame.Surface((800, 110), pygame.SRCALPHA) #thanks to stackoverflow for this line
 
 start_time = pygame.time.get_ticks()
@@ -64,6 +64,9 @@ telegraph_timings = [0, 3000, 6000, 9000]
 
 player_rect = pygame.Rect(400, 300, 50, 50)
 player_speed = 5
+jumps_remaining = 2
+max_jumps = 2
+prev_up_key = False
 
 platform_rects = [
     pygame.Rect(150, 430, 120, 20),
@@ -74,13 +77,18 @@ platform_rects = [
     pygame.Rect(530, 170, 120, 20),
 ]
 
+double_jump_rect = pygame.Rect(-350, 200, 20, 20)
+double_jump = False
+double_jump_collected = False
+flash_start_time = 0
+is_flashing = False
+
 gravity = 0.5
 velocity_y = 0
 on_ground = False
 
 title_font = pygame.font.SysFont('Comic Sans MS', 50)
 small_font = pygame.font.SysFont('Comic Sans MS', 25)
-
 
 on_start_screen = True
 
@@ -146,9 +154,14 @@ while True:
 		player_rect.x -= player_speed
 	if keys[pygame.K_RIGHT]:
 		player_rect.x += player_speed
-	if keys[pygame.K_UP] and on_ground:
-		velocity_y = -12
-		on_ground = False
+	if keys[pygame.K_UP] and not prev_up_key:
+		if jumps_remaining > 0:
+			if jumps_remaining == max_jumps or double_jump:
+				velocity_y = -12
+				jumps_remaining -= 1
+				on_ground = False
+	
+	prev_up_key = keys[pygame.K_UP]
 	if keys[pygame.K_DOWN]:
 		player_rect.y += player_speed
 	for i in range(4):
@@ -197,6 +210,9 @@ while True:
 		start_time = pygame.time.get_ticks()
 
 	if coins >= 10:
+		if not double_jump_collected:
+			double_jump_rect.x = double_jump_x
+			double_jump_rect.y = double_jump_y
 		telegraph_timings = [0, 2000, 4000, 6000]
 		attack_timings = [1000, 3000, 5000, 7000]
 
@@ -208,6 +224,7 @@ while True:
 		player_rect.y = floor.y - player_rect.height
 		velocity_y = 0
 		on_ground = True
+		jumps_remaining = max_jumps
 	if player_rect.x < 0:
 		player_rect.x = 0
 	if player_rect.right > 800:
@@ -221,6 +238,12 @@ while True:
 	if coin.colliderect(platform_rects[0]) or coin.colliderect(platform_rects[1]) or coin.colliderect(platform_rects[2]) or coin.colliderect(platform_rects[3]) or coin.colliderect(platform_rects[4]) or coin.colliderect(platform_rects[5]):
 			coin.x = random.randint(50, 750)
 			coin.y = random.randint(50, 500)
+	if player_rect.colliderect(double_jump_rect):
+		double_jump = True
+		double_jump_collected = True
+		double_jump_rect.x = -9999
+		is_flashing = True
+		flash_start_time = pygame.time.get_ticks()
 	healthbar.width = health * 2
 	remaining = 45 - (pygame.time.get_ticks() - timer_start) / 1000.0
 	if coins >= 20:
@@ -236,7 +259,18 @@ while True:
 		on_death_screen = True
 		on_death()
 	screen.fill((255, 255, 255))
-	pygame.draw.rect(screen, (255, 0, 0), player_rect)
+	pygame.draw.rect(screen, (0, 0, 255), double_jump_rect)
+	
+	player_color = (255, 0, 0)
+	if is_flashing:
+		elapsed = pygame.time.get_ticks() - flash_start_time
+		if elapsed < 400:
+			if (elapsed // 50) % 2 == 0:
+				player_color = (255, 255, 255)
+		else:
+			is_flashing = False
+	
+	pygame.draw.rect(screen, player_color, player_rect)
 	pygame.draw.rect(screen, (0, 0, 0), floor)
 	pygame.draw.rect(screen, (255, 205, 0), coin)
 	pygame.draw.rect(screen, (0, 255, 0), healthbar)
@@ -258,7 +292,11 @@ while True:
 			player_rect.y = platform.y - player_rect.height
 			velocity_y = 0
 			on_ground = True
+			jumps_remaining = max_jumps
 
+	double_jump_text = small_font.render("Double Jump: Active", False, (0, 0, 0))
+	if double_jump_collected and coins >= 10:
+		screen.blit(double_jump_text, (350, 30))
 	text_surface = my_font.render( 'Health:' + str(health), False, (0, 0, 0))
 	timer_text = my_font.render('Timer: '+ str(int(remaining)), False, (0, 0, 0))
 	coins_text = my_font.render('Coins: ' + str(coins) + "/20", False, (0, 0, 0))
@@ -267,4 +305,5 @@ while True:
 	screen.blit(coins_text, (620, 10))
 
 	pygame.display.flip()
+	print(jumps_remaining)
 
